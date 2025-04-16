@@ -1,0 +1,3 @@
+Sistema da Maquina: Ubunto v24
+IP: 168.75.105.12
+Comando para acessar: ssh -i "C:\Users\renna\OneDrive\Documentos\Unemat\2025-01\Programação\ssh-key-2025-04-15.key" ubuntu@168.75.105.12
