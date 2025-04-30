@@ -1,0 +1,265 @@
+version: "3.7"
+
+# Definição dos Serviços
+services:
+  # Definição do Serviço do Editor
+  n8n_editor:
+    # imagem do docker
+    image: n8nio/n8n:latest
+    # comando padrão para subir o servidor web
+    command: start
+    # configura a rede do serviço
+    networks:
+      - network_public
+    # configura as variáveis de ambiente
+    environment:
+      # Define o Tipo de Banco de Dados para Postgres
+      - DB_TYPE=postgresdb
+      # Configura o Nome do Banco de Dados
+      - DB_POSTGRESDB_DATABASE=n8ndb
+      # Configura o Host do Banco de Dados
+      - DB_POSTGRESDB_HOST=postgres
+      # Configura a Porta do Banco de Dados
+      - DB_POSTGRESDB_PORT=5432
+      # Configura o Usuário do Banco de Dados
+      - DB_POSTGRESDB_USER=postgres
+      # Configura a Senha do Banco de Dados
+      - DB_POSTGRESDB_PASSWORD=MLKBGYHmG:zUf6w
+      # Cria uma chave de criptografia para o N8N
+      # Gere uma nova aqui https://www.allkeysgenerator.com/Random/Security-Encryption-Key-Generator.aspx
+      # escolha a opção GUID
+      - N8N_ENCRYPTION_KEY=50e38b36-effe-4b7d-b9e2-9ee1a3782781
+      # Configura o Host do Editor do N8N
+      - N8N_HOST=auto.vitor.bentektecnologia.com.br
+      # Configura o Endereço competo do Editor
+      - N8N_EDITOR_BASE_URL=https://auto.vitor.bentektecnologia.com.br/
+      # Força o uso de SSL
+      - N8N_PROTOCOL=https
+      # Configura o ambiente de execução
+      - NODE_ENV=production
+      # Configura o Endereço do Webhook
+      - WEBHOOK_URL=https://autowebhook.vitor.bentektecnologia.com.br/
+      # Configura o modo de execução para fila
+      - EXECUTIONS_MODE=queue
+      # Community Nodes
+      - N8N_REINSTALL_MISSING_PACKAGES=true
+      - N8N_COMMUNITY_PACKAGES_ENABLED=true
+      - N8N_NODE_PATH=/home/note/.n8n/nodes
+      # Configura o host do Redis
+      - QUEUE_BULL_REDIS_HOST=redis
+      # Configura a porta do Redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      # Configura o indice do banco de dados do Redis
+      - QUEUE_BULL_REDIS_DB=2
+      # Configura as bibliotecas externas que serão utilizadas
+      - NODE_FUNCTION_ALLOW_EXTERNAL=moment,lodash,moment-with-locales
+      # Configura a limpeza dos dados de execução
+      - EXECUTIONS_DATA_PRUNE=true
+      # Configura o tempo máximo de armazenamento dos dados de execução
+      - EXECUTIONS_DATA_MAX_AGE=336 # 2 semanas
+      # Timezone
+      - GENERIC_TIMEZONE=America/Cuiaba
+      - TZ=America/CUiaba
+    # Configura o Modo de Deploy da Aplicação
+    deploy:
+      # O editor será executado no modo de replicação
+      mode: replicated
+      # Vamos ter apenas uma instância do editor
+      replicas: 1
+      # Configura o local de execução
+      placement:
+        constraints:
+          # Você pode rodar o Editor no Manager mesmo pois usa poucos recursos
+          - node.role == manager
+          #- node.hostname == worker1
+          # - node.labels.app == http # nome do label: app, valor do label: http
+      # Limitação
+      resources:
+        # Definição dos Limites de Recursos deste Serviço
+        limits:
+          # Define a quantidade de CPU para o CodeChat para evitar travamento do Host
+          cpus: "0.5"
+          # Define a quantidade de RAM para o CodeChat para evitar travamento do Host
+          memory: 1024M
+      labels:
+        # Configura o Roteamento do Traefik
+        - traefik.enable=true
+        - traefik.http.routers.n8n_editor.rule=Host(`auto.vitor.bentektecnologia.com.br`)
+        - traefik.http.routers.n8n_editor.entrypoints=websecure
+        - traefik.http.routers.n8n_editor.priority=1
+        - traefik.http.routers.n8n_editor.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.n8n_editor.service=n8n_editor
+        - traefik.http.services.n8n_editor.loadbalancer.server.port=5678
+        - traefik.http.services.n8n_editor.loadbalancer.passHostHeader=1
+
+  n8n_webhook:
+    # imagem do docker
+    image: n8nio/n8n:latest
+    # comando padrão para subir o servidor web
+    command: webhook
+    # configura a rede do serviço
+    networks:
+      - network_public
+    # configura as variáveis de ambiente
+    environment:
+      # Define o Tipo de Banco de Dados para Postgres
+      - DB_TYPE=postgresdb
+      # Configura o Nome do Banco de Dados
+      - DB_POSTGRESDB_DATABASE=n8ndb
+      # Configura o Host do Banco de Dados
+      - DB_POSTGRESDB_HOST=postgres
+      # Configura a Porta do Banco de Dados
+      - DB_POSTGRESDB_PORT=5432
+      # Configura o Usuário do Banco de Dados
+      - DB_POSTGRESDB_USER=postgres
+      # Configura a Senha do Banco de Dados
+      - DB_POSTGRESDB_PASSWORD=MLKBGYHmG:zUf6w
+      # usa a mesma chave criada no editor
+      - N8N_ENCRYPTION_KEY=50e38b36-effe-4b7d-b9e2-9ee1a3782781
+      # Configura o Host do Editor do N8N
+      - N8N_HOST=auto.vitor.bentektecnologia.com.br
+      # Configura o Endereço competo do Editor
+      - N8N_EDITOR_BASE_URL=https://auto.vitor.bentektecnologia.com.br/
+      # Força o uso de SSL
+      - N8N_PROTOCOL=https
+      # Configura o ambiente de execução
+      - NODE_ENV=production
+      # Configura o Endereço do Webhook
+      - WEBHOOK_URL=https://autowebhook.vitor.bentektecnologia.com.br/
+      # Configura o modo de execução para fila
+      - EXECUTIONS_MODE=queue
+      # Community Nodes
+      - N8N_REINSTALL_MISSING_PACKAGES=true
+      - N8N_COMMUNITY_PACKAGES_ENABLED=true
+      - N8N_NODE_PATH=/home/note/.n8n/nodes
+      # Configura o host do Redis
+      - QUEUE_BULL_REDIS_HOST=redis
+      # Configura a porta do Redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      # Configura o indice do banco de dados do Redis
+      - QUEUE_BULL_REDIS_DB=2
+      # Configura as bibliotecas externas que serão utilizadas
+      - NODE_FUNCTION_ALLOW_EXTERNAL=moment,lodash,moment-with-locales
+      # Configura a limpeza dos dados de execução
+      - EXECUTIONS_DATA_PRUNE=true
+      # Configura o tempo máximo de armazenamento dos dados de execução
+      - EXECUTIONS_DATA_MAX_AGE=336 # 2 semanas
+      # Timezone
+      - GENERIC_TIMEZONE=America/Cuiaba
+      - TZ=America/Cuiaba
+    # Configura o Modo de Deploy da Aplicação
+    deploy:
+      # O editor será executado no modo de replicação
+      mode: replicated
+      # Vamos ter apenas uma instância do editor
+      replicas: 2
+      # Configura o local de execução
+      placement:
+        # Você pode rodar o Editor no Manager mesmo pois usa poucos recursos
+        constraints:
+          - node.role == manager
+          # - node.hostname == worker1
+          # - node.labels.app == workers # nome do label: app, valor do label: workers
+      resources:
+        # Definição dos Limites de Recursos deste Serviço
+        limits:
+          # Define a quantidade de CPU para o CodeChat para evitar travamento do Host
+          cpus: "0.5"
+          # Define a quantidade de RAM para o CodeChat para evitar travamento do Host
+          memory: 1024M
+      labels:
+        # Configura o Roteamento do Traefik
+        - traefik.enable=true
+        - traefik.http.routers.n8n_webhook.rule=(Host(`autowebhook.vitor.bentektecnologia.com.br`))
+        - traefik.http.routers.n8n_webhook.entrypoints=websecure
+        - traefik.http.routers.n8n_webhook.priority=1
+        - traefik.http.routers.n8n_webhook.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.n8n_webhook.service=n8n_webhook
+        - traefik.http.services.n8n_webhook.loadbalancer.server.port=5678
+        - traefik.http.services.n8n_webhook.loadbalancer.passHostHeader=1
+
+  n8n_worker:
+    # imagem do docker
+    image: n8nio/n8n:latest
+    # comando padrão para subir o servidor web
+    command: worker --concurrency=10
+    # configura a rede do serviço
+    networks:
+      - network_public
+    # configura as variáveis de ambiente
+    environment:
+      # Define o Tipo de Banco de Dados para Postgres
+      - DB_TYPE=postgresdb
+      # Configura o Nome do Banco de Dados
+      - DB_POSTGRESDB_DATABASE=n8ndb
+      # Configura o Host do Banco de Dados
+      - DB_POSTGRESDB_HOST=postgres
+      # Configura a Porta do Banco de Dados
+      - DB_POSTGRESDB_PORT=5432
+      # Configura o Usuário do Banco de Dados
+      - DB_POSTGRESDB_USER=postgres
+      # Configura a Senha do Banco de Dados
+      - DB_POSTGRESDB_PASSWORD=MLKBGYHmG:zUf6w
+      # usa a mesma chave criada no editor
+      - N8N_ENCRYPTION_KEY=50e38b36-effe-4b7d-b9e2-9ee1a3782781
+      # Configura o Host do Editor do N8N
+      - N8N_HOST=auto.vitor.bentektecnologia.com.br
+      # Configura o Endereço competo do Editor
+      - N8N_EDITOR_BASE_URL=https://auto.vitor.bentektecnologia.com.br/
+      # Força o uso de SSL
+      - N8N_PROTOCOL=https
+      # Configura o ambiente de execução
+      - NODE_ENV=production
+      # Configura o Endereço do Webhook
+      - WEBHOOK_URL=https://autowebhook.vitor.bentektecnologia.com.br/
+      # Configura o modo de execução para fila
+      - EXECUTIONS_MODE=queue
+      # Community Nodes
+      - N8N_REINSTALL_MISSING_PACKAGES=true
+      - N8N_COMMUNITY_PACKAGES_ENABLED=true
+      - N8N_NODE_PATH=/home/note/.n8n/nodes
+      # Configura o host do Redis
+      - QUEUE_BULL_REDIS_HOST=redis
+      # Configura a porta do Redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      # Configura o indice do banco de dados do Redis
+      - QUEUE_BULL_REDIS_DB=2
+      # Configura as bibliotecas externas que serão utilizadas
+      - NODE_FUNCTION_ALLOW_EXTERNAL=moment,lodash,moment-with-locales
+      # Configura a limpeza dos dados de execução
+      - EXECUTIONS_DATA_PRUNE=true
+      # Configura o tempo máximo de armazenamento dos dados de execução
+      - EXECUTIONS_DATA_MAX_AGE=336 # 2 semanas
+      # Timezone
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+    # Configura o Modo de Deploy da Aplicação
+    deploy:
+      # O editor será executado no modo de replicação
+      mode: replicated
+      # Vamos ter apenas uma instância do editor
+      replicas: 1
+      # Configura o local de execução
+      placement:
+        # Você pode rodar o Editor no Manager mesmo pois usa poucos recursos
+        constraints:
+          - node.role == manager
+          # - node.hostname == worker1
+          # - node.labels.app == webhooks # nome do label: app, valor do label: webhooks
+      resources:
+        # Definição dos Limites de Recursos deste Serviço
+        limits:
+          # Define a quantidade de CPU para o CodeChat para evitar travamento do Host
+          cpus: "0.5"
+          # Define a quantidade de RAM para o CodeChat para evitar travamento do Host
+          memory: 1024M
+
+networks:
+  network_public:
+    name: network_public
+    external: true
+
+volumes:
+  n8n:
+    external: true
+    name: n8n

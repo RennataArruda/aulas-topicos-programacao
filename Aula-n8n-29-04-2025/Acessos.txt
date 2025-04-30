@@ -1,0 +1,7 @@
+N8N: https://auto.rennata.autom.my/
+Portainer: https://p.rennata.autom.my/#!/3/docker/services
+Evolution: https://api.rennata.autom.my/
+
+SMTP -> khyplutazylfjmid
+
+GROQ -> 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
